@@ -4,6 +4,7 @@ import account.Exception.IncorrectMonthException;
 import account.Exception.NotAuthenticationException;
 import account.Exception.RemoveAdminException;
 import account.Exception.UserNotFoundException;
+import account.Utils.JwtUtils;
 import account.model.*;
 import account.repository.AccountRepository;
 import account.repository.PaymentRepository;
@@ -32,14 +33,13 @@ import java.util.stream.Collectors;
 public class AccountController {
     private AccountService accountService;
 
-
     public AccountController(AccountService accountService) {
         this.accountService = accountService;
     }
 
     @PostMapping("signup")
     public SignupResponse signup(@RequestBody @Valid SignupRequest request) {
-        return accountService.signup(request);
+       return accountService.signup(request);
     }
 
 

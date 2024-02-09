@@ -10,5 +10,8 @@ public enum SecurityAction {
     LOCK_USER,
     UNLOCK_USER,
     DELETE_USER,
-    BRUTE_FORCE
+    BRUTE_FORCE,
+    CREATE_INTERN,
+    INTERN_SOLVED_TASK,
+    INTERN_BECAME_USER
 }

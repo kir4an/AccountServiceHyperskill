@@ -2,7 +2,9 @@ package account.model;
 
 
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Null;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,6 +15,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @AllArgsConstructor
@@ -48,6 +51,8 @@ public class User  {
     private List<Role> roles = new ArrayList<>();
     private int failedAttempts;
     private boolean isAccountLocked;
+    @Nullable
+    private LocalDateTime unlockingTime;
 
     public int getId() {
         return id;
@@ -100,6 +105,14 @@ public class User  {
 
     public void setRole(List<Role> roles) {
         this.roles = roles;
+    }
+
+    public LocalDateTime getUnlockingTime() {
+        return unlockingTime;
+    }
+
+    public void setUnlockingTime(LocalDateTime unlockingTime) {
+        this.unlockingTime = unlockingTime;
     }
 
     @Override

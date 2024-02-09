@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class AccountService {
+    private final int MAX_COUNT_USER = 10;
     private AccountRepository accountRepository;
     private PasswordEncoder passwordEncoder;
 
@@ -35,6 +36,9 @@ public class AccountService {
         this.paymentRepository = paymentRepository;
         this.roleRepository = roleRepository;
     }
+    public User getUser(SignupRequest request){
+        return accountRepository.findByEmailIgnoreCase(request.getEmail());
+    }
 
     public SignupResponse signup(SignupRequest request) {
         if (listPassword.contains(request.getPassword())) {
@@ -43,9 +47,9 @@ public class AccountService {
         if (accountRepository.existsByEmailIgnoreCase(request.getEmail())) {
             throw new UserAlreadyExistsException("User exist!");
         }
+        checkCountUser();
         User user = new User();
-        List<Role> roles = new ArrayList<>() ;
-
+        List<Role> roles = new ArrayList<>();
         user.setName(request.getName());
         user.setLastname(request.getLastname());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -62,7 +66,7 @@ public class AccountService {
             logService.addEvent(SecurityAction.CREATE_USER,"Anonymous", user.getEmail().toLowerCase(), "api/auth/signup");
         }
         User user1 = accountRepository.findByEmailIgnoreCase(request.getEmail());
-        return convertUserToSignupResponse(user1);
+         return convertUserToSignupResponse(user1);
     }
 
     public ChangePasswordResponse changePass(SecurityUser user, NewPassword password) {
@@ -110,6 +114,20 @@ public class AccountService {
         } else if (monthValue > 12 || monthValue < 1) {
             throw new IncorrectMonthException("Month should be between 1 and 12!");
         }
+    }
+    public boolean checkCountUser(){
+        List<User> userList = accountRepository.findAll();
+        int count = 0;
+        for(User user:userList){
+            Role userRole = roleRepository.findByName(UserRoleType.ROLE_USER);
+            if(user.getRole().contains(userRole)){
+                count++;
+            }
+        }
+        if(count>MAX_COUNT_USER){
+            throw new QuantityUserExceededException("The state is overcrowded");
+        }
+        return true;
     }
 
     public void updatePayment(Payment updatePayment) {
@@ -264,6 +282,24 @@ public class AccountService {
             throw new UserLockedException("User account is locked");
         }
     }
+//    @Scheduled(initialDelay = 30000,fixedRate = 30000)
+//    public void checkTimeLocked(){
+//        logger.info("Method checkTimeLocked was start");
+//        List<User> userList = accountRepository.findAll();
+//        for(User user:userList){
+//                user.setAccountLocked(false);
+//                user.setFailedAttempts(0);
+//                user.setUnlockingTime(null);
+//                accountRepository.save(user);
+//        }
+//    }
+//    @Scheduled(fixedRate = 300000)
+//    public void dropFailedAttempts(){
+//        List<User> userList  = accountRepository.findAll();
+//        for(User user:userList){
+//            user.setFailedAttempts(0);
+//        }
+//    }
 }
 
 

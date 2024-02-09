@@ -6,7 +6,8 @@ public enum UserRoleType {
     ROLE_AUDITOR,
     ROLE_ACCOUNTANT,
 
-    ROLE_USER
-
+    ROLE_USER,
+    ROLE_HR,
+    ROLE_INTERN
 
 }

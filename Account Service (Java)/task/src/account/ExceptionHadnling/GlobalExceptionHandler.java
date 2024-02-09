@@ -1,6 +1,7 @@
 package account.ExceptionHadnling;
 
 
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,5 +40,9 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN).body(responseBody);
     }
-
+    @ExceptionHandler(ExpiredJwtException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public void handleJwtExpired(HttpServletResponse response) throws IOException{
+        response.sendError(HttpStatus.BAD_REQUEST.value());
+    }
 }

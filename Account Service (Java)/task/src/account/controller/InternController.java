@@ -1,8 +1,8 @@
 package account.controller;
 
-import account.model.InternRequest;
-import account.model.JwtResponse;
-import account.model.RefreshJwtRequest;
+import account.request.InternRequest;
+import account.Dto.JwtResponseDto;
+import account.request.RefreshJwtRequest;
 import account.service.InternService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,7 +19,7 @@ public class InternController {
     }
 
     @PostMapping("api/intern/signup")
-    public ResponseEntity<JwtResponse> signupWithJwt(@RequestBody InternRequest internRequest){
+    public ResponseEntity<JwtResponseDto> signupWithJwt(@RequestBody InternRequest internRequest){
         var jwt = internService.signup(internRequest);
         return ResponseEntity.ok(jwt);
     }
@@ -28,12 +28,12 @@ public class InternController {
         return internService.solvingProblem(UserSolution,task);
     }
     @PostMapping("api/intern/access")
-    public ResponseEntity<JwtResponse> updateAccessToken(@RequestBody RefreshJwtRequest request){
+    public ResponseEntity<JwtResponseDto> updateAccessToken(@RequestBody RefreshJwtRequest request){
         var refreshToken = internService.getAccessToken(request.getRefreshRequest());
         return ResponseEntity.ok(refreshToken);
     }
     @PostMapping("api/intern/refresh")
-    public ResponseEntity<JwtResponse> updateRefreshToken(@RequestBody RefreshJwtRequest request) {
+    public ResponseEntity<JwtResponseDto> updateRefreshToken(@RequestBody RefreshJwtRequest request) {
         var refreshToken = internService.getRefreshToken(request.getRefreshRequest());
         return ResponseEntity.ok(refreshToken);
     }

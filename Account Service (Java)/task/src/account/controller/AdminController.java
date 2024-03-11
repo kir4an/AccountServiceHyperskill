@@ -1,17 +1,17 @@
 package account.controller;
 
+import account.Dto.SignupDto;
 import account.model.*;
+import account.request.ChangeRoleRequest;
+import account.request.LockStatusRequest;
 import account.service.AccountService;
 import account.service.LogService;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 public class AdminController {
@@ -25,7 +25,7 @@ public class AdminController {
     }
 
     @GetMapping("api/admin/user/")
-    public List<SignupResponse> getAllUsers() {
+    public List<SignupDto> getAllUsers() {
         return accountService.convertToSignupResponse();
     }
 
@@ -36,13 +36,13 @@ public class AdminController {
     }
 
     @PutMapping("/api/admin/user/role")
-    public ResponseEntity<?> getRole(@RequestBody ChangeRole role, @AuthenticationPrincipal SecurityUser user) {
+    public ResponseEntity<?> getRole(@RequestBody ChangeRoleRequest role, @AuthenticationPrincipal SecurityUser user) {
         var response = accountService.removeOrGrantRole(role, user);
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("api/admin/user/access")
-    public ResponseEntity<?> LockUser(@RequestBody ChangeLockStatus lockStatus, @AuthenticationPrincipal SecurityUser user) {
+    public ResponseEntity<?> LockUser(@RequestBody LockStatusRequest lockStatus, @AuthenticationPrincipal SecurityUser user) {
         accountService.checkLockeUser(user);
         return accountService.adminSelection(lockStatus, user);
     }

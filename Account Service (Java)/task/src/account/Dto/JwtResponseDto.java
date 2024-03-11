@@ -1,6 +1,6 @@
-package account.model;
+package account.Dto;
 
-public class JwtResponse {
+public class JwtResponseDto {
     private String accessToken;
     private String refreshToken;
 
@@ -20,7 +20,7 @@ public class JwtResponse {
         this.refreshToken = refreshToken;
     }
 
-    public JwtResponse(String accessToken, String refreshToken) {
+    public JwtResponseDto(String accessToken, String refreshToken) {
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
     }

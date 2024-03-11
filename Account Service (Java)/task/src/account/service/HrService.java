@@ -1,5 +1,6 @@
 package account.service;
 
+import account.Mapper.UserMapper;
 import account.model.HrManager;
 import account.model.SecurityAction;
 import account.model.User;
@@ -48,21 +49,12 @@ public class HrService {
                     log.info(USER_MESSAGE);
                     internRepository.delete(userIntern);
                     logService.addEvent(SecurityAction.INTERN_BECAME_USER,userIntern.getEmail(),userIntern.getEmail(),"api/hr/addIntern");
-                    User user = convertInternToUser(userIntern);
+                    User user = UserMapper.INSTANCE.convertInternToUser(userIntern);
                     userList.add(user);
                 }
             }
         }
         return userList;
     }
-    public User convertInternToUser(UserIntern userIntern){
-        User user = new User();
-        user.setName(userIntern.getName());
-        user.setEmail(userIntern.getEmail());
-        user.setLastname(userIntern.getLastname());
-        user.setFailedAttempts(0);
-        user.setAccountLocked(false);
-        accountRepository.save(user);
-        return user;
-    }
+
 }

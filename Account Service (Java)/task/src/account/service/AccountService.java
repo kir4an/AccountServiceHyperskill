@@ -1,10 +1,19 @@
 package account.service;
 
+import account.Dto.ChangePasswordDto;
+import account.Dto.InfoResponseDto;
+import account.Dto.SignupDto;
 import account.Exception.*;
+import account.Mapper.DtoMapper;
+import account.Mapper.UserMapper;
 import account.model.*;
 import account.repository.AccountRepository;
 import account.repository.PaymentRepository;
 import account.repository.RoleRepository;
+import account.request.ChangeRoleRequest;
+import account.request.LockStatusRequest;
+import account.request.NewPasswordRequest;
+import account.request.SignupRequest;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +37,7 @@ public class AccountService {
     private LogService logService;
     private final List<String> listPassword = List.of("PasswordForJanuary", "PasswordForFebruary", "PasswordForMarch", "PasswordForApril",
             "PasswordForMay", "PasswordForJune", "PasswordForJuly", "PasswordForAugust",
-            "PasswordForSeptember","PasswordForOctober", "PasswordForNovember", "PasswordForDecember");
+            "PasswordForSeptember", "PasswordForOctober", "PasswordForNovember", "PasswordForDecember");
 
     public AccountService(AccountRepository accountRepository, PasswordEncoder passwordEncoder, PaymentRepository paymentRepository, RoleRepository roleRepository) {
         this.accountRepository = accountRepository;
@@ -36,42 +45,40 @@ public class AccountService {
         this.paymentRepository = paymentRepository;
         this.roleRepository = roleRepository;
     }
-    public User getUser(SignupRequest request){
+
+    public User getUser(SignupRequest request) {
         return accountRepository.findByEmailIgnoreCase(request.getEmail());
     }
 
-    public SignupResponse signup(SignupRequest request) {
+    public SignupDto signup(SignupRequest request) {
         if (listPassword.contains(request.getPassword())) {
             throw new HackedPassword("The password is in the hacker's database!");
         }
         if (accountRepository.existsByEmailIgnoreCase(request.getEmail())) {
             throw new UserAlreadyExistsException("User exist!");
         }
-        checkCountUser();
-        User user = new User();
         List<Role> roles = new ArrayList<>();
-        user.setName(request.getName());
-        user.setLastname(request.getLastname());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setEmail(request.getEmail());
+        checkCountUser();
+        User user = UserMapper.INSTANCE.signupRequestToUser(request,passwordEncoder.encode(request.getPassword()),roles);
         if (accountRepository.findAll().isEmpty()) {
             roles.add(roleRepository.findByName(UserRoleType.ROLE_ADMINISTRATOR));
             Collections.sort(roles);
             user.setRole(roles);
             accountRepository.save(user);
-            logService.addEvent(SecurityAction.CREATE_USER,"Anonymous", user.getEmail().toLowerCase(), "api/auth/signup");
+            logService.addEvent(SecurityAction.CREATE_USER, "Anonymous", user.getEmail().toLowerCase(), "api/auth/signup");
         } else {
             user.getRole().add(roleRepository.findByName(UserRoleType.ROLE_USER));
             accountRepository.save(user);
-            logService.addEvent(SecurityAction.CREATE_USER,"Anonymous", user.getEmail().toLowerCase(), "api/auth/signup");
+            logService.addEvent(SecurityAction.CREATE_USER, "Anonymous", user.getEmail().toLowerCase(), "api/auth/signup");
         }
         User user1 = accountRepository.findByEmailIgnoreCase(request.getEmail());
-         return convertUserToSignupResponse(user1);
+
+        return DtoMapper.INSTANCE.toSignupResponse(user1,user1.getRole());
     }
 
-    public ChangePasswordResponse changePass(SecurityUser user, NewPassword password) {
+    public ChangePasswordDto changePass(SecurityUser user, NewPasswordRequest password) {
         User user1 = accountRepository.findByEmailIgnoreCase(user.getUsername());
-        if(user1.isAccountLocked()){
+        if (user1.isAccountLocked()) {
             throw new UserLockedException("User account is locked");
         }
         String passwordDB = user1.getPassword();
@@ -83,9 +90,9 @@ public class AccountService {
         } else {
             user1.setPassword(passwordEncoder.encode(password.getNewPassword()));
             accountRepository.save(user1);
-            logService.addEvent(SecurityAction.CHANGE_PASSWORD, user1.getEmail().toLowerCase(), user1.getEmail().toLowerCase(),"api/auth/changepass");
+            logService.addEvent(SecurityAction.CHANGE_PASSWORD, user1.getEmail().toLowerCase(), user1.getEmail().toLowerCase(), "api/auth/changepass");
         }
-        ChangePasswordResponse passwordResponse = new ChangePasswordResponse();
+        ChangePasswordDto passwordResponse = new ChangePasswordDto();
         passwordResponse.setEmail(user1.getEmail().toLowerCase());
         passwordResponse.setStatus("The password has been updated successfully");
         return passwordResponse;
@@ -115,16 +122,17 @@ public class AccountService {
             throw new IncorrectMonthException("Month should be between 1 and 12!");
         }
     }
-    public boolean checkCountUser(){
+
+    public boolean checkCountUser() {
         List<User> userList = accountRepository.findAll();
         int count = 0;
-        for(User user:userList){
+        for (User user : userList) {
             Role userRole = roleRepository.findByName(UserRoleType.ROLE_USER);
-            if(user.getRole().contains(userRole)){
+            if (user.getRole().contains(userRole)) {
                 count++;
             }
         }
-        if(count>MAX_COUNT_USER){
+        if (count > MAX_COUNT_USER) {
             throw new QuantityUserExceededException("The state is overcrowded");
         }
         return true;
@@ -148,67 +156,52 @@ public class AccountService {
         paymentRepository.save(payment);
     }
 
-    public InfoResponse convertToInfoResponse(Payment payment, String email) {
+    public InfoResponseDto convertToInfoResponse(Payment payment, String email) {
         User user = accountRepository.findByEmailIgnoreCase(email);
         YearMonth yearMonth = YearMonth.parse(payment.getPeriod(), DateTimeFormatter.ofPattern("MM-yyyy"));
         String monthName = yearMonth.getMonth().toString().substring(0, 1).toUpperCase() + yearMonth.getMonth().toString().substring(1).toLowerCase();
         int dollars = payment.getSalary() / 100;
         int cents = payment.getSalary() % 100;
         String salaryFormatted = String.format("%d dollar(s) %d cent(s)", dollars, cents);
-        InfoResponse infoResponse = InfoResponse.builder()
-                .name(user.getName())
-                .lastname(user.getLastname())
-                .period(monthName + "-" + yearMonth.getYear())
-                .salary(salaryFormatted)
-                .build();
-        return infoResponse;
+        return DtoMapper.INSTANCE.toInfoResponse(user, payment, salaryFormatted);
     }
 
-    public List<InfoResponse> getFormattedPayments(String email) {
+    public List<InfoResponseDto> getFormattedPayments(String email) {
         List<Payment> payments = paymentRepository.findAllByEmailIgnoreCaseOrderByPeriodDesc(email);
-        List<InfoResponse> formattedPayments = new ArrayList<>();
+        List<InfoResponseDto> formattedPayments = new ArrayList<>();
         for (Payment payment : payments) {
-            InfoResponse info = convertToInfoResponse(payment, email);
+            InfoResponseDto info = convertToInfoResponse(payment, email);
             formattedPayments.add(info);
         }
         return formattedPayments;
     }
 
-    public List<SignupResponse> convertToSignupResponse() {
+    public List<SignupDto> convertToSignupResponse() {
         List<User> userList = accountRepository.findAllByOrderById();
         return userList.stream()
-                .map(this::convertUserToSignupResponse)
+                .map(user -> DtoMapper.INSTANCE.toSignupResponse(user,user.getRole()))
                 .collect(Collectors.toList());
     }
 
-    public SignupResponse convertUserToSignupResponse(User user) {
-        SignupResponse response = new SignupResponse();
-        response.setId(user.getId());
-        response.setName(user.getName());
-        response.setLastname(user.getLastname());
-        response.setEmail(user.getEmail().toLowerCase());
-        response.setRoles(user.getRole().stream().map(Role::getName).collect(Collectors.toSet()));
-        return response;
-    }
-    public ResponseEntity<?> deleteUserByEmail(String email, SecurityUser securityUser){
+    public ResponseEntity<?> deleteUserByEmail(String email, SecurityUser securityUser) {
         checkLockeUser(securityUser);
-        Map<String,String> resultMap = new HashMap<>();
-        resultMap.put("user",email);
-        resultMap.put("status","Deleted successfully!");
+        Map<String, String> resultMap = new HashMap<>();
+        resultMap.put("user", email);
+        resultMap.put("status", "Deleted successfully!");
         User user = accountRepository.findByEmailIgnoreCase(email);
-        if(user==null){
+        if (user == null) {
             throw new UserNotFoundException("User not found!");
         }
-        if(user.getRole().stream().anyMatch(role -> role.getName() == UserRoleType.ROLE_ADMINISTRATOR)){
+        if (user.getRole().stream().anyMatch(role -> role.getName() == UserRoleType.ROLE_ADMINISTRATOR)) {
             throw new RemoveAdminException("Can't remove ADMINISTRATOR role!");
-        }else {
+        } else {
             accountRepository.deleteByEmailIgnoreCase(email);
-            logService.addEvent(SecurityAction.DELETE_USER, securityUser.getUsername().toLowerCase(),user.getEmail().toLowerCase(),"api/admin/user");
+            logService.addEvent(SecurityAction.DELETE_USER, securityUser.getUsername().toLowerCase(), user.getEmail().toLowerCase(), "api/admin/user");
             return ResponseEntity.ok(resultMap);
         }
     }
 
-    public SignupResponse removeOrGrantRole(ChangeRole role,SecurityUser user) {
+    public SignupDto removeOrGrantRole(ChangeRoleRequest role, SecurityUser user) {
         User userDatabase = accountRepository.findByEmailIgnoreCase(role.getUser());
         checkLockeUser(user);
         UserRoleType roleValue;
@@ -238,47 +231,47 @@ public class AccountService {
             userDatabase.getRole().add(newRole);
             Collections.sort(userDatabase.getRole());
             accountRepository.save(userDatabase);
-            logService.addEvent(SecurityAction.GRANT_ROLE,user.getUsername().toLowerCase(), "Grant role " + role.getRole() + " to " +userDatabase.getEmail().toLowerCase(),"/api/admin/user/role" );
-        }else if(role.getOperation().equals("REMOVE") && roleValue.name().equals(UserRoleType.ROLE_ADMINISTRATOR.name())){
+            logService.addEvent(SecurityAction.GRANT_ROLE, user.getUsername().toLowerCase(), "Grant role " + role.getRole() + " to " + userDatabase.getEmail().toLowerCase(), "/api/admin/user/role");
+        } else if (role.getOperation().equals("REMOVE") && roleValue.name().equals(UserRoleType.ROLE_ADMINISTRATOR.name())) {
             throw new RemoveAdminException("Can't remove ADMINISTRATOR role!");
-        } else if(role.getOperation().equals("REMOVE") && !userDatabase.getRole().contains(newRole)){
+        } else if (role.getOperation().equals("REMOVE") && !userDatabase.getRole().contains(newRole)) {
             throw new RemoveAdminException("The user does not have a role!");
         } else if (role.getOperation().equals("REMOVE") && userDatabase.getRole().size() == 1) {
             throw new RemoveAdminException("The user must have at least one role!");
-        }else if (role.getOperation().equals("REMOVE") && !userDatabase.getRole().contains(AdminRole)) {
+        } else if (role.getOperation().equals("REMOVE") && !userDatabase.getRole().contains(AdminRole)) {
             userDatabase.getRole().remove(newRole);
             accountRepository.save(userDatabase);
-            logService.addEvent(SecurityAction.REMOVE_ROLE,user.getUsername().toLowerCase(), "Remove role " + role.getRole() + " from " +userDatabase.getEmail().toLowerCase(),"/api/admin/user/role" );
+            logService.addEvent(SecurityAction.REMOVE_ROLE, user.getUsername().toLowerCase(), "Remove role " + role.getRole() + " from " + userDatabase.getEmail().toLowerCase(), "/api/admin/user/role");
         } else {
             throw new RemoveAdminException("Can't remove ADMINISTRATOR role!");
         }
-        SignupResponse response = convertUserToSignupResponse(userDatabase);
-        return response;
+        return DtoMapper.INSTANCE.toSignupResponse(userDatabase,userDatabase.getRole());
     }
 
-    public ResponseEntity<Map<String, String>> adminSelection(ChangeLockStatus lockStatus,SecurityUser securityUser){
+    public ResponseEntity<Map<String, String>> adminSelection(LockStatusRequest lockStatus, SecurityUser securityUser) {
         Role AdminRole = roleRepository.findByName(UserRoleType.ROLE_ADMINISTRATOR);
         User user = accountRepository.findByEmailIgnoreCase(lockStatus.getUser());
-        if (user == null){
+        if (user == null) {
             throw new UserAlreadyExistsException("User not found!");
         }
-        if(user.getRole().contains(AdminRole)){
+        if (user.getRole().contains(AdminRole)) {
             throw new RemoveAdminException("Can't lock the ADMINISTRATOR!");
         }
-        if(lockStatus.getOperation().equals("LOCK")){
+        if (lockStatus.getOperation().equals("LOCK")) {
             user.setAccountLocked(true);
             logService.addEvent(SecurityAction.LOCK_USER, securityUser.getUsername().toLowerCase(), "Lock user " + user.getEmail().toLowerCase(), "/api/admin/user/role");
-            return ResponseEntity.ok(Map.of("status","User " + lockStatus.getUser().toLowerCase() + " locked!"));
+            return ResponseEntity.ok(Map.of("status", "User " + lockStatus.getUser().toLowerCase() + " locked!"));
         } else if (lockStatus.getOperation().equals("UNLOCK")) {
             user.setAccountLocked(false);
             logService.addEvent(SecurityAction.UNLOCK_USER, securityUser.getUsername().toLowerCase(), "Unlock user " + user.getEmail().toLowerCase(), "/api/admin/user/role");
-            return ResponseEntity.ok(Map.of("status","User " + lockStatus.getUser().toLowerCase() + " unlocked!"));
-        }else{
+            return ResponseEntity.ok(Map.of("status", "User " + lockStatus.getUser().toLowerCase() + " unlocked!"));
+        } else {
             throw new HackedPassword("Incorrect operation");
         }
     }
-    public void checkLockeUser(SecurityUser user){
-        if(accountRepository.findByEmailIgnoreCase(user.getUsername()).isAccountLocked()){
+
+    public void checkLockeUser(SecurityUser user) {
+        if (accountRepository.findByEmailIgnoreCase(user.getUsername()).isAccountLocked()) {
             throw new UserLockedException("User account is locked");
         }
     }
@@ -300,6 +293,7 @@ public class AccountService {
 //            user.setFailedAttempts(0);
 //        }
 //    }
+
 }
 
 

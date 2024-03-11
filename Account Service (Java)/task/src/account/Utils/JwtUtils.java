@@ -1,7 +1,6 @@
 package account.Utils;
 
-import account.model.HrRequest;
-import account.model.InternRequest;
+import account.request.HrRequest;
 import account.model.UserRoleType;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

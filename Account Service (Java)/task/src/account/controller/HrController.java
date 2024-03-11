@@ -1,21 +1,23 @@
 package account.controller;
 
+import account.Dto.UserDto;
+import account.Mapper.UserMapper;
 import account.Utils.JwtUtils;
-import account.model.HrManager;
-import account.model.HrRequest;
+import account.request.HrRequest;
 import account.model.User;
-import account.repository.HrManagerRepository;
 import account.service.HrService;
 import account.service.LogService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+
 @RestController
 public class HrController {
     private JwtUtils jwtUtils;
@@ -34,8 +36,15 @@ public class HrController {
         return ResponseEntity.ok(token);
     }
     @GetMapping("api/hr/addIntern")
-    public ResponseEntity<List<User>> checkUserInternResult(){
+    public ResponseEntity<List<UserDto>> checkUserInternResult() {
         List<User> resultUser = hrService.checkUserIntern();
-        return ResponseEntity.ok(resultUser);
+        List<UserDto> resultUserDto = new ArrayList<>();
+        for (User user : resultUser) {
+            UserDto userDto = UserMapper.INSTANCE.convertUserToUserDto(user);
+            resultUserDto.add(userDto);
+        }
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(resultUserDto);
     }
 }

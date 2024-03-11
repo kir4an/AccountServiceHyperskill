@@ -1,9 +1,9 @@
-package account.model;
+package account.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Size;
 
-public class NewPassword {
+public class NewPasswordRequest {
     @Size(min = 12,message = "Password length must be 12 chars minimum!")
     @JsonProperty("new_password")
     private String newPassword;

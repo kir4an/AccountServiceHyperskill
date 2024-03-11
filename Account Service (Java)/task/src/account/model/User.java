@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -23,7 +24,7 @@ import java.util.*;
 @Builder
 @Entity
 @Table(name = "users")
-public class User  {
+public class User implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column

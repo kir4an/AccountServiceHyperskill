@@ -2,7 +2,7 @@ package account.controller;
 
 import account.Exception.IncorrectMonthException;
 import account.Exception.NotAuthenticationException;
-import account.model.InfoResponse;
+import account.Dto.InfoResponseDto;
 import account.model.Payment;
 import account.model.SecurityUser;
 import account.model.User;
@@ -10,13 +10,10 @@ import account.repository.AccountRepository;
 import account.repository.PaymentRepository;
 import account.service.AccountService;
 import jakarta.annotation.Nullable;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,13 +59,13 @@ public class PaymentController {
         }
         accountService.checkLockeUser(user);
         if (period == null) {
-            List<InfoResponse> responseList = accountService.getFormattedPayments(user.getUsername());
+            List<InfoResponseDto> responseList = accountService.getFormattedPayments(user.getUsername());
             return ResponseEntity.ok(responseList);
         }
         Payment payment = paymentRepository.findByPeriodAndEmailIgnoreCase(period, user.getUsername());
         if (payment != null) {
-            InfoResponse infoResponse = accountService.convertToInfoResponse(payment, user.getUsername());
-            return ResponseEntity.ok(infoResponse);
+            InfoResponseDto infoResponseDto = accountService.convertToInfoResponse(payment, user.getUsername());
+            return ResponseEntity.ok(infoResponseDto);
         } else {
             throw new IncorrectMonthException("Incorrect month");
         }

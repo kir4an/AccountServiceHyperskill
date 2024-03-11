@@ -1,6 +1,6 @@
-package account.model;
+package account.Dto;
 
-public class ChangePasswordResponse {
+public class ChangePasswordDto {
     private String email;
     private String status;
 

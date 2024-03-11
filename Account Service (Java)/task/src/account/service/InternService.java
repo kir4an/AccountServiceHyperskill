@@ -1,11 +1,14 @@
 package account.service;
 
+import account.Dto.JwtResponseDto;
+import account.Mapper.UserMapper;
 import account.Utils.JwtUtils;
 import account.model.*;
 import account.repository.InternRepository;
 import account.repository.RoleRepository;
 import account.repository.SolutionRepository;
 
+import account.request.InternRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -33,20 +36,16 @@ public class InternService {
         this.internRepository = internRepository;
     }
 
-    public JwtResponse signup(InternRequest internRequest){
+    public JwtResponseDto signup(InternRequest internRequest){
         String accessToken = jwtUtils.generateJwtToken(internRequest.getEmail());
         String refreshToken = jwtUtils.generateRefreshToken(internRequest.getEmail());
-        JwtResponse jwtResponse = new JwtResponse(accessToken,refreshToken);
+        JwtResponseDto jwtResponseDto = new JwtResponseDto(accessToken,refreshToken);
         List<Role> roleList = new ArrayList<>();
         roleList.add(roleRepository.findByName(UserRoleType.ROLE_INTERN));
-        UserIntern intern = new UserIntern();
-        intern.setEmail(internRequest.getEmail());
-        intern.setName(internRequest.getName());
-        intern.setLastname(internRequest.getLastname());
-        intern.setRoles(roleList);
+        UserIntern intern = UserMapper.INSTANCE.internRequestToUserIntern(internRequest,roleList);
         internRepository.save(intern);
         logService.addEvent(SecurityAction.CREATE_USER,internRequest.getEmail(),internRequest.getEmail(),"api/intern/signup");
-        return jwtResponse;
+        return jwtResponseDto;
     }
     public ResponseEntity<?> solvingProblem(String userSolution, String task){
         if(solutionRepository.existsByTaskIgnoreCase(task)){
@@ -67,14 +66,14 @@ public class InternService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return authentication.getName();
     }
-    public JwtResponse getAccessToken(String refreshToken){
+    public JwtResponseDto getAccessToken(String refreshToken){
         String email = jwtUtils.getUsernameRefreshToken(refreshToken);
         String token =  jwtUtils.generateJwtToken(email);
-        return new JwtResponse(token,null);
+        return new JwtResponseDto(token,null);
     }
-    public JwtResponse getRefreshToken(String refresh){
+    public JwtResponseDto getRefreshToken(String refresh){
         String email = jwtUtils.getUsernameRefreshToken(refresh);
         String token = jwtUtils.generateRefreshToken(email);
-        return new JwtResponse(null,token);
+        return new JwtResponseDto(null,token);
     }
 }

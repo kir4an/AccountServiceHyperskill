@@ -1,8 +1,7 @@
-package account.model;
+package account.request;
 
-public class ChangeRole {
+public class LockStatusRequest {
     private String user;
-    private String role;
     private String operation;
 
     public String getUser() {
@@ -11,14 +10,6 @@ public class ChangeRole {
 
     public void setUser(String user) {
         this.user = user;
-    }
-
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
     }
 
     public String getOperation() {

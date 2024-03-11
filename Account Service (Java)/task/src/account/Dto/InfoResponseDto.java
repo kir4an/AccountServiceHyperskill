@@ -1,9 +1,13 @@
-package account.model;
+package account.Dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.NoArgsConstructor;
 
 @Builder
-public class InfoResponse {
+@NoArgsConstructor
+@AllArgsConstructor
+public class InfoResponseDto {
     private String name;
     private String lastname;
     private String period;

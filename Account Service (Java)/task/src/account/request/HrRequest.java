@@ -1,13 +1,12 @@
-package account.model;
+package account.request;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+public class HrRequest {
 
-public class InternRequest {
     private String name;
     private String lastname;
     private String email;
-    @JsonProperty("Resume")
-    private String Resume;
+    private String secretKey;
+
 
     public String getName() {
         return name;
@@ -33,11 +32,11 @@ public class InternRequest {
         this.email = email;
     }
 
-    public String getResume() {
-        return Resume;
+    public String getSecretKey() {
+        return secretKey;
     }
 
-    public void setResume(String resume) {
-        this.Resume = resume;
+    public void setSecretKey(String secretKey) {
+        this.secretKey = secretKey;
     }
 }

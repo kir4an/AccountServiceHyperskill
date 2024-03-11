@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.Date;
 @Entity
-
 @AllArgsConstructor
 @RequiredArgsConstructor
 public class SecurityEvent {

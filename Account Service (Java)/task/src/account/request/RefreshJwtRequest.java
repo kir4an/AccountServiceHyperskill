@@ -1,4 +1,4 @@
-package account.model;
+package account.request;
 
 import lombok.Getter;
 import lombok.Setter;

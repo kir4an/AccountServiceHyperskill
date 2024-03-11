@@ -1,32 +1,17 @@
 package account.controller;
 
-import account.Exception.IncorrectMonthException;
+import account.Dto.ChangePasswordDto;
+import account.Dto.SignupDto;
 import account.Exception.NotAuthenticationException;
-import account.Exception.RemoveAdminException;
-import account.Exception.UserNotFoundException;
-import account.Utils.JwtUtils;
 import account.model.*;
-import account.repository.AccountRepository;
-import account.repository.PaymentRepository;
-import account.repository.RoleRepository;
+import account.request.NewPasswordRequest;
+import account.request.SignupRequest;
 import account.service.AccountService;
-import jakarta.annotation.Nullable;
-import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("api/auth/")
@@ -38,17 +23,23 @@ public class AccountController {
     }
 
     @PostMapping("signup")
-    public SignupResponse signup(@RequestBody @Valid SignupRequest request) {
-       return accountService.signup(request);
+    public ResponseEntity<SignupDto> signup(@RequestBody @Valid SignupRequest request) {
+        SignupDto response = accountService.signup(request);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
     }
 
 
     @PostMapping("changepass")
-    public ChangePasswordResponse changePassword(@AuthenticationPrincipal SecurityUser user, @RequestBody @Valid NewPassword password) {
+    public ResponseEntity<ChangePasswordDto> changePassword(@AuthenticationPrincipal SecurityUser user, @RequestBody @Valid NewPasswordRequest password) {
         if (user == null) {
             throw new NotAuthenticationException();
         }
-        return accountService.changePass(user, password);
+        ChangePasswordDto passwordDto = accountService.changePass(user,password);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(passwordDto);
     }
 
 }

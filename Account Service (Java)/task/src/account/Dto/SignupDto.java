@@ -1,26 +1,28 @@
-package account.model;
+package account.Dto;
 
+import account.model.Role;
+import account.model.UserRoleType;
 import jakarta.validation.constraints.Email;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SignupResponse {
+public class SignupDto {
     private int id;
 
     private String name;
     private String lastname;
     @Email
     private String email;
-    private Set<UserRoleType> roles = new HashSet<>();
+
+    private List<String> roles = new ArrayList<>();
 
     public String getName() {
         return name;
@@ -53,11 +55,17 @@ public class SignupResponse {
         this.id = id;
     }
 
-    public Set<UserRoleType> getRoles() {
+    public List<String> getRoles() {
         return roles;
     }
 
-    public void setRoles(Set<UserRoleType> roles) {
+    public void setRoles(List<String> roles) {
         this.roles = roles;
     }
+    public SignupDto(List<Role> roles) {
+        this.roles = roles.stream()
+                .map(role -> role.getName().toString())
+                .collect(Collectors.toList());
+    }
+
 }
